@@ -27,20 +27,35 @@ class MemberBox(discord.Client):
 				return True
 		return False
 
-	def cache(self, role):
+	def cache(self, g, role):
 		print("This is where we cache the role in a JSON")
 		in_f = open("cache.json")
 		cache = json.load(in_f)
 		in_f.close()
-		cache[str(role)] = role.id
+		cache[str(g)][str(role)] = role.id
 		out_f = open("cache.json", 'w')
 		cache = json.dump(cache, out_f)
 		out_f.close()
 
 
 
-	def read_cache(self, target):
-		print("This is where we read the cache")
+	def getFromCache(self, k1, k2):
+		cache = {}
+		rtn = -1
+		f =  open('cache.json', 'r')
+		cache = json.load(f)
+		f.close()
+		try:
+			rtn = cache[k1][k2]
+		except KeyError:
+			pass
+		if rtn != -1:
+			del cache[k1][k2]
+			out_f = open("cache.json", 'w')
+			cache = json.dump(cache, out_f)
+			out_f.close()
+		
+		return rtn
 
 	# COMAND FUNCTIONS
 	async def createBox(self, message, flags):
@@ -77,14 +92,35 @@ class MemberBox(discord.Client):
 			NewBoxName = f'Box {len(guild.roles)}-MB'
 		# Creates the new role and saves the value
 		await self.openBoxes[guild.name].edit(name=NewBoxName)
-		self.cache(self.openBoxes[guild.name])
+		self.cache(guild, self.openBoxes[guild.name])
 		await message.channel.send(f'Box {self.openBox} closed: {NewBoxName}')
 
 	async def deleteBox(self, message, flags):
-		boxName = ''
-		print(message)
-		print(flags)
-		await message.channel.send(f'Box {boxName} destroyed')
+		guild = message.author.guild
+		lst = message.content.split(" ")
+		# Get the box from the message
+		target = ''
+		for i in lst:
+			if i == '':
+				lst.remove(i)
+		if lst[len(lst) - 1] == 'delete-box':
+			await message.channel.send('Specify the box you want deleted after `delete-box`')
+		for i in range(len(lst)):
+			if lst[i] == 'delete-box':
+				while lst[i][len(lst[i]) - 3:] != '-MB':
+					i += 1
+					target += lst[i] + ' '
+				break
+		target = target[:len(target) - 1]
+		boxKey = self.getFromCache(str(guild),target)
+		if boxKey == -1:
+			await message.channel.send(f'The Box {target} could not be found')
+			return
+		# Destroy the box
+		for user in guild.get_role(boxKey).members:
+			await guild.kick(user)
+		await guild.get_role(boxKey).delete()
+		await message.channel.send(f'Box `{target}` destroyed')
 
 	async def manageFlags(self, flags):
 		print(flags)
@@ -92,8 +128,6 @@ class MemberBox(discord.Client):
 	# EVENT FUNCTIONS
 	async def on_ready(self):
 		print('Logged on as', self.user)
-		for intent in self.intents:
-			print(intent)
 
 	async def on_message(self, message):
 		print(message)
@@ -120,7 +154,7 @@ class MemberBox(discord.Client):
 				await self.closeBox(message, flags)
 			elif comand == 'delete-box':
 				await self.deleteBox(message, flags)
-			elif flags[0] != None:
+			elif flags != None:
 				await self.manageFlags(flags)
 			else:
 					await message.channel.send(f'The comand ```{comand}``` is not recognized for help. Try ```MemberBox -help for more information```')
@@ -130,9 +164,6 @@ class MemberBox(discord.Client):
 		if self.isBoxOpen(guild) == True:
 			guild = member.guild
 			cur_box = self.openBoxes[guild.name]
-			print()
-			print(member)
-			print(cur_box)
 			await member.add_roles(cur_box)
 
 # End of class
