@@ -105,9 +105,7 @@ class MemberBox(discord.Client):
 		lst = message.content.split(" ")
 		# Get the box from the message
 		target = ''
-		for i in lst:
-			if i == '':
-				lst.remove(i)
+		lst =  [l for l in lst if l]
 		if lst[len(lst) - 1] == 'delete-box':
 			await message.channel.send('Specify the box you want deleted after `delete-box`')
 		for i in range(len(lst)):
