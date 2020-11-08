@@ -28,16 +28,24 @@ class MemberBox(discord.Client):
 		return False
 
 	def cache(self, g, role):
-		print("This is where we cache the role in a JSON")
 		in_f = open("cache.json")
 		cache = json.load(in_f)
 		in_f.close()
-		cache[str(g)][str(role)] = role.id
+		if not(str(g) in cache):
+			cache.update({ str(g) : {str(role) : role.id} })
+		else:
+			cache[str(g)][str(role)] = role.id
 		out_f = open("cache.json", 'w')
 		cache = json.dump(cache, out_f)
 		out_f.close()
 
-
+	def createBoxId(self, g, i):
+		in_f = open("cache.json")
+		cache = json.load(in_f)
+		in_f.close()
+		for value in cache[g]:
+			if value == 0:
+				break
 
 	def getFromCache(self, k1, k2):
 		cache = {}
