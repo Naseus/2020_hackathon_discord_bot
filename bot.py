@@ -27,20 +27,20 @@ class MemberBox(discord.Client):
 				return True
 		return False
 
-	def cashe(self, role):
-		print("This is where we cashe the role in a JSON")
-		in_f = open("cashe.json")
-		cashe = json.load(in_f)
+	def cache(self, role):
+		print("This is where we cache the role in a JSON")
+		in_f = open("cache.json")
+		cache = json.load(in_f)
 		in_f.close()
-		cashe[str(role)] = role.id
-		out_f = open("cashe.json", 'w')
-		cashe = json.dump(cashe, out_f)
+		cache[str(role)] = role.id
+		out_f = open("cache.json", 'w')
+		cache = json.dump(cache, out_f)
 		out_f.close()
 
 
 
-	def read_cashe(self, target):
-		print("This is where we read the cashe")
+	def read_cache(self, target):
+		print("This is where we read the cache")
 
 	# COMAND FUNCTIONS
 	async def createBox(self, message, flags):
@@ -77,7 +77,7 @@ class MemberBox(discord.Client):
 			NewBoxName = f'Box {len(guild.roles)}-MB'
 		# Creates the new role and saves the value
 		await self.openBoxes[guild.name].edit(name=NewBoxName)
-		self.cashe(self.openBoxes[guild.name])
+		self.cache(self.openBoxes[guild.name])
 		await message.channel.send(f'Box {self.openBox} closed: {NewBoxName}')
 
 	async def deleteBox(self, message, flags):
