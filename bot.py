@@ -9,21 +9,40 @@ f.close()
 class MemberBox(discord.Client):
 	# Constructor
 	def __init__(self):
-		self.boxes = [[]]
 		self.openBox = 'Open Box-MB'
-		self.openBoxes = []
+		self.openBoxes = {}
 		super(MemberBox, self).__init__()
 
 	# HELPER FUNCTIONS
 	def isBoxOpen(self, guild):
 		for i in guild.roles:
 			if str(i) == self.openBox:
+				self.openBoxes[guild.name] = i
 				return True
 		return False
-	def lookupRoleID(self, target, guild):
-		for role in guild.roles:
-			print(role.id)
+		
+	def lookup_role(self, target, guild):
+		for i in guild.roles:
+			if str(i) == target:
+				return True
+		return False
 
+	def cashe(self, role):
+		print("This is where we cashe the role in a JSON")
+		in_f = open("cashe.json")
+		cashe = json.load(in_f)
+		in_f.close()
+		cashe[str(role)] = role.id
+		out_f = open("cashe.json", 'w')
+		cashe = json.dump(cashe, out_f)
+		out_f.close()
+
+
+
+	def read_cashe(self, target):
+		print("This is where we read the cashe")
+
+	# COMAND FUNCTIONS
 	async def createBox(self, message, flags):
 		guild = message.author.guild
 		if self.isBoxOpen(guild):
@@ -33,7 +52,6 @@ class MemberBox(discord.Client):
 		self.openBox = 'Open Box-MB'
 		guild = message.author.guild
 		newBox = await guild.create_role(name=self.openBox)
-		self.openBoxes.append(newBox)
 		print(message)
 		print(flags)
 		await message.channel.send(f"Box \'{self.openBox}\' created")
@@ -46,22 +64,21 @@ class MemberBox(discord.Client):
 			await message.channel.send('There is no open box. Try opening a box with `MemberBox create-box`')
 			return
 		# Sets name of the new role
+		# Flags are broken
 		if flags != None:
 			for flag in flags:
-				if flag[:3] == '-n\"' and flag[len(flag) - 1] == '\"':
-					NewBoxName = f'{flag[3:len(flag)]}-MB'
+				print(flag)
+				if flag[:3] == '-t\"' and flag[len(flag) - 1] == '\"':
+					NewBoxName = f'Box {len(guild.roles)}: {flag[3 : len(flag) - 1]}-MB'
 					NBset = True
+				elif flag[:3] == '-t\"':
+					await message.channel.send(' Spaces are not allowed in your tag (-t)')
 		if not NBset:
-			NewBoxName = f'Box{len(self.boxes)}'
+			NewBoxName = f'Box {len(guild.roles)}-MB'
 		# Creates the new role and saves the value
-		guild = message.author.guild
-		await guild.get_role(self.openBox).update(name=NewBoxName)
-		newBox = NewBoxName
-		self.boxes.append(newBox)
+		await self.openBoxes[guild.name].edit(name=NewBoxName)
+		self.cashe(self.openBoxes[guild.name])
 		await message.channel.send(f'Box {self.openBox} closed: {NewBoxName}')
-		# Reset open box
-		self.openBox = ''
-
 
 	async def deleteBox(self, message, flags):
 		boxName = ''
@@ -78,18 +95,21 @@ class MemberBox(discord.Client):
 
 	async def on_message(self, message):
 		flags = []
+		in_str = False
 		comand = ''
 		# don't respond to ourselves
 		if message.author.bot == True :
 			return
 
 		if message.content[:10] == 'MemberBox ':
-			for i in message.content[10:].split(' '):
-				if i[0] == '-':
+			for i in message.content[10:].split(' '): 
+				if i != '' and i[0] == '-':
 					flags.append(i)
 				else:
-					comand = i
-					break
+					if comand == '':
+						comand = i
+					else:
+						break			# THROW ERROR HERE TO MANY COMANDS
 			if comand == 'create-box':
 				await self.createBox(message, flags)
 			elif comand == 'close-box':
