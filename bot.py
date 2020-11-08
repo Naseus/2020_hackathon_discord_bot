@@ -8,10 +8,10 @@ f.close()
 # Main MemberBox code
 class MemberBox(discord.Client):
 	# Constructor
-	def __init__(self):
+	def __init__(self, intents=discord.Intents().all()):
 		self.openBox = 'Open Box-MB'
 		self.openBoxes = {}
-		super(MemberBox, self).__init__()
+		super(MemberBox, self).__init__(intents=discord.Intents().all())
 
 	# HELPER FUNCTIONS
 	def isBoxOpen(self, guild):
@@ -46,7 +46,7 @@ class MemberBox(discord.Client):
 	async def createBox(self, message, flags):
 		guild = message.author.guild
 		if self.isBoxOpen(guild):
-			await message.channel.send(f'The box {self.openBox}. Try closing the box first with `MemberBox close-box`')
+			await message.channel.send(f'The box `{self.openBox}` is open. Try closing the box first with `MemberBox close-box`')
 			return
 		print(self.isBoxOpen(guild))
 		self.openBox = 'Open Box-MB'
@@ -92,8 +92,12 @@ class MemberBox(discord.Client):
 	# EVENT FUNCTIONS
 	async def on_ready(self):
 		print('Logged on as', self.user)
+		for intent in self.intents:
+			print(intent)
 
 	async def on_message(self, message):
+		print(message)
+		print(message.content)
 		flags = []
 		in_str = False
 		comand = ''
@@ -121,9 +125,15 @@ class MemberBox(discord.Client):
 			else:
 					await message.channel.send(f'The comand ```{comand}``` is not recognized for help. Try ```MemberBox -help for more information```')
 	
-	async def on_new_member_join(self, member):
+	async def on_member_join(self, member):
+		guild = member.guild
 		if self.isBoxOpen(guild) == True:
-			await message.channel.send(self.openBox)
+			guild = member.guild
+			cur_box = self.openBoxes[guild.name]
+			print()
+			print(member)
+			print(cur_box)
+			await member.add_roles(cur_box)
 
 # End of class
 client = MemberBox()
